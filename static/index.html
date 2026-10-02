@@ -13,7 +13,7 @@
 <section class="poi-panel" aria-label="Pontos de interesse">
 <h3>📍 Pontos de interesse</h3>
 <p class="poi-note">Selecione o que deseja visualizar. Os pontos que você cadastrar ficam salvos neste navegador.</p>
-<div id="poiFilters"></div><p class="poi-note" id="poiMissing" style="margin-top:8px">As categorias com 0 ainda não têm coordenadas verificadas.</p>
+<div id="poiFilters"></div><p class="poi-note" id="poiMissing" style="margin-top:8px">Bunkers normais ainda aguardam coordenadas verificadas. O local médico confirmado é um hospital.</p>
 <button type="button" id="poiAll" class="secondary">Mostrar todos</button><button type="button" id="poiNone" class="secondary">Ocultar todos</button>
 <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:bold">➕ Cadastrar um local</summary>
 <p class="poi-note">Escolha a categoria e cole as coordenadas acima; depois clique em adicionar. Também é possível marcar clicando no mapa.</p>
@@ -71,7 +71,7 @@ const {px,py}=convert(x,y);if(px<0||px>S||py<0||py>S){st.textContent="⚠️ Pon
 const poiTypes=[
  ['fuel','⛽','Postos de combustível'],['secret','🔐','Bunkers secretos'],
  ['abandoned','☢️','Bunkers abandonados'],['normal','🏢','Bunkers normais'],
- ['pharmacy','🏥','Farmácias'],['atm','🏧','Caixas eletrônicos / bancos']
+ ['pharmacy','🏥','Hospitais / locais médicos'],['atm','🏧','Caixas eletrônicos / bancos']
 ];
 const poiLayer=document.getElementById('poiLayer'),poiFilters=document.getElementById('poiFilters');
 const poiCategory=document.getElementById('poiCategory'),poiStatus=document.getElementById('poiStatus');
