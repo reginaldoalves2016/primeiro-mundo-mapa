@@ -32,7 +32,7 @@
 </details><p class="hint">Use a roda do mouse ou os botões +/− para ampliar. Arraste o mapa para explorar. No celular, use dois dedos para dar zoom.</p><p class="hint">A consulta é feita no seu dispositivo; as coordenadas não são enviadas ao servidor.</p></aside><section class="map-area" id="viewport" aria-label="Mapa interativo da ilha SCUM"><div class="world" id="world"><img src="/static/mapa.png" alt="Mapa da ilha SCUM" draggable="false"><div class="grid" id="grid"></div><div id="poiLayer"></div><div class="pin" id="pin"><i></i></div></div><div class="controls"><button id="plus" aria-label="Ampliar">+</button><button id="minus" aria-label="Reduzir">−</button><button id="home" class="secondary" aria-label="Ver mapa completo">⌂</button><button id="loc" class="secondary" aria-label="Centralizar marcador">◎</button></div><div class="legend">🔴 Sua localização • Base NerdMaps</div></section></main><script type="module">
 // SDK opcional: a página também funciona no navegador enquanto a Activity é configurada.
 if(new URLSearchParams(location.search).has('frame_id')){import('https://esm.sh/@discord/embedded-app-sdk@2').then(async m=>{const id=new URLSearchParams(location.search).get('client_id');if(id){const sdk=new m.DiscordSDK(id);await sdk.ready();}}).catch(e=>console.warn('Discord SDK:',e));}
-</script><script>
+</script><script src="/static/poi-official.js"></script><script>
 const S=1080, minX=-904800,maxX=616818,minY=-904800,maxY=618818;
 const grid=document.getElementById('grid');for(let row=0;row<5;row++)for(let col=0;col<5;col++){let cell=document.createElement('div');cell.className='grid-cell';let label=document.createElement('span');label.textContent='DCBAZ'[row]+(4-col);cell.append(label);grid.append(cell)}
 document.getElementById('showGrid').onchange=e=>grid.style.display=e.target.checked?'grid':'none';
@@ -75,6 +75,7 @@ const poiTypes=[
 const poiLayer=document.getElementById('poiLayer'),poiFilters=document.getElementById('poiFilters');
 const poiCategory=document.getElementById('poiCategory'),poiStatus=document.getElementById('poiStatus');
 let pois=[],visiblePoi=new Set(),placingPoi=false;
+const officialPois=window.PM_POI_OFFICIAL||[];
 try{const data=JSON.parse(localStorage.getItem('pm_poi_v1')||'[]');
  if(Array.isArray(data))pois=data.filter(p=>p&&Number.isFinite(p.px)&&Number.isFinite(p.py)&&poiTypes.some(t=>t[0]===p.type)).slice(0,500);
 }catch(e){}
@@ -90,7 +91,18 @@ poiTypes.forEach(([id,icon,name])=>{
 });
 function renderPois(){
  poiLayer.replaceChildren();
- for(const [id] of poiTypes)document.getElementById('count-'+id).textContent=pois.filter(p=>p.type===id).length;
+ for(const [id] of poiTypes)document.getElementById('count-'+id).textContent=pois.filter(p=>p.type===id).length+officialPois.filter(p=>p.type===id).length;
+ officialPois.forEach((p)=>{
+  if(!visiblePoi.has(p.type))return;
+  const t=poiTypes.find(t=>t[0]===p.type);if(!t)return;
+  const at=convert(p.x,p.y);
+  if(!Number.isFinite(at.px)||!Number.isFinite(at.py)||at.px<0||at.px>S||at.py<0||at.py>S)return;
+  const el=document.createElement('button');el.type='button';el.className='poi-marker';
+  el.style.cssText=`left:${at.px}px;top:${at.py}px;background:none;border:0;padding:0`;
+  el.textContent=t[1];el.title=p.name+' • '+t[2];
+  el.onclick=e=>{e.stopPropagation();poiStatus.textContent=p.name+' • '+t[2]+' • X='+p.x+' Y='+p.y;point=at;center()};
+  poiLayer.append(el);
+ });
  pois.forEach((p,i)=>{
   if(!visiblePoi.has(p.type))return;
   const t=poiTypes.find(t=>t[0]===p.type);
