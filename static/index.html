@@ -13,7 +13,7 @@
 <section class="poi-panel" aria-label="Pontos de interesse">
 <h3>📍 Pontos de interesse</h3>
 <p class="poi-note">Selecione o que deseja visualizar. Os pontos que você cadastrar ficam salvos neste navegador.</p>
-<div id="poiFilters"></div><p class="poi-note" id="poiMissing" style="margin-top:8px">As categorias com 0 aguardam coordenadas verificadas. Você pode cadastrá-las ou importar uma lista.</p>
+<div id="poiFilters"></div><p class="poi-note" id="poiMissing" style="margin-top:8px">As categorias com 0 ainda não têm coordenadas verificadas.</p>
 <button type="button" id="poiAll" class="secondary">Mostrar todos</button><button type="button" id="poiNone" class="secondary">Ocultar todos</button>
 <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:bold">➕ Cadastrar um local</summary>
 <p class="poi-note">Escolha a categoria e cole as coordenadas acima; depois clique em adicionar. Também é possível marcar clicando no mapa.</p>
@@ -23,12 +23,7 @@
 <button type="button" id="poiAddClick" class="secondary">Marcar clicando no mapa</button>
 <p class="poi-note" id="poiStatus" role="status"></p>
 </details>
-<details style="margin-top:10px"><summary style="cursor:pointer">📥 Importar coordenadas de locais</summary>
-<p class="poi-note">Escolha a categoria e cole uma linha por local: Nome;X;Y (coordenadas do jogo). Também aceita JSON com objetos {"name":"Local","x":123,"y":456}. A lista é salva neste navegador.</p>
-<select id="poiImportType" aria-label="Categoria para importar"></select>
-<textarea id="poiImportText" style="min-height:85px" placeholder="Exemplo: Bunker A2;123456;-654321"></textarea>
-<button type="button" id="poiImportBtn">Importar e mostrar</button><p id="poiImportStatus" class="poi-note" role="status"></p>
-</details>
+
 <details style="margin-top:10px"><summary style="cursor:pointer">Gerenciar meus marcadores</summary><div id="poiList"></div></details>
 </section><details class="tools"><summary>🛠️ Calibrar posição do marcador</summary>
 <p>1. Vá a um local conhecido no jogo e copie suas coordenadas. Cole no campo acima. Clique em <b>Registrar referência 1</b> e depois clique na posição correta no mapa.</p>
@@ -76,7 +71,7 @@ const {px,py}=convert(x,y);if(px<0||px>S||py<0||py>S){st.textContent="⚠️ Pon
 const poiTypes=[
  ['fuel','⛽','Postos de combustível'],['secret','🔐','Bunkers secretos'],
  ['abandoned','☢️','Bunkers abandonados'],['normal','🏢','Bunkers normais'],
- ['pharmacy','🏥','Farmácias'],['outpost','🛒','Postos comerciais']
+ ['pharmacy','🏥','Farmácias'],['atm','🏧','Caixas eletrônicos / bancos']
 ];
 const poiLayer=document.getElementById('poiLayer'),poiFilters=document.getElementById('poiFilters');
 const poiCategory=document.getElementById('poiCategory'),poiStatus=document.getElementById('poiStatus');
@@ -89,39 +84,12 @@ const savePois=()=>{try{localStorage.setItem('pm_poi_v1',JSON.stringify(pois))}c
 poiTypes.forEach(([id,icon,name])=>{
  const row=document.createElement('label');row.className='poi-row';
  const cb=document.createElement('input');cb.type='checkbox';cb.checked=false;cb.onchange=()=>{
- if(cb.checked)visiblePoi.add(id);else visiblePoi.delete(id);renderPois();if(cb.checked&&!pois.some(p=>p.type===id)&&!officialPois.some(p=>p.type===id))poiStatus.textContent="Esta categoria ainda não possui coordenadas verificadas. Cadastre um local ou importe uma lista.";};
+ if(cb.checked)visiblePoi.add(id);else visiblePoi.delete(id);renderPois();if(cb.checked&&!pois.some(p=>p.type===id)&&!officialPois.some(p=>p.type===id))poiStatus.textContent="Esta categoria ainda não possui coordenadas verificadas. Cadastre um local.";};
  const title=document.createElement('span');title.textContent=icon+' '+name;
  const count=document.createElement('em');count.id='count-'+id;
  row.append(cb,title,count);poiFilters.append(row);
  const option=document.createElement('option');option.value=id;option.textContent=icon+' '+name;poiCategory.append(option);
 });
-// Bulk import supports only explicit user-supplied real coordinates; no fabricated POIs.
-const poiImportType=document.getElementById('poiImportType');
-poiTypes.forEach(([id,icon,name])=>{const opt=document.createElement('option');opt.value=id;opt.textContent=icon+' '+name;poiImportType.append(opt)});
-document.getElementById('poiImportBtn').onclick=()=>{
- const type=poiImportType.value, raw=document.getElementById('poiImportText').value.trim();
- const report=document.getElementById('poiImportStatus');let entries=[];
- if(!raw){report.textContent='Cole uma lista de coordenadas.';return}
- try{
-  if(raw.startsWith('[')){
-   const parsed=JSON.parse(raw);if(!Array.isArray(parsed))throw Error('JSON deve ser uma lista');
-   entries=parsed.map(o=>({name:String(o.name||o.nome||'Local'),x:Number(o.x),y:Number(o.y)}));
-  }else{
-   entries=raw.split(/\r?\n/).filter(Boolean).map(line=>{
-    const parts=line.split(';');if(parts.length!==3)throw Error('Use Nome;X;Y');
-    return {name:parts[0].trim(),x:Number(parts[1].trim().replace(',','.')),y:Number(parts[2].trim().replace(',','.'))};
-   });
-  }
-  if(entries.length>500||!entries.length)throw Error('Máximo de 500 pontos por importação');
-  if(entries.some(p=>!p.name||!Number.isFinite(p.x)||!Number.isFinite(p.y)))throw Error('Nome ou coordenadas inválidos');
-  const prepared=entries.map(p=>({...p,...convert(p.x,p.y)}));
-  if(prepared.some(p=>p.px<0||p.px>S||p.py<0||p.py>S))throw Error('Uma ou mais coordenadas estão fora do mapa');
-  const available=Math.max(0,500-pois.length);if(prepared.length>available)throw Error('Limite de 500 marcadores pessoais');
-  for(const p of prepared)pois.push({type,name:p.name,x:p.x,y:p.y,px:p.px,py:p.py});
-  visiblePoi.add(type);poiFilters.querySelectorAll('input').forEach((cb,i)=>cb.checked=visiblePoi.has(poiTypes[i][0]));
-  savePois();renderPois();report.textContent='✓ '+prepared.length+' local(is) importado(s).';
- }catch(e){report.textContent='⚠️ '+e.message}
-};
 function renderPois(){
  poiLayer.replaceChildren();
  for(const [id] of poiTypes)document.getElementById('count-'+id).textContent=pois.filter(p=>p.type===id).length+officialPois.filter(p=>p.type===id).length;
