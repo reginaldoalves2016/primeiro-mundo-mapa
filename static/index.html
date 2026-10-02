@@ -74,14 +74,14 @@ const poiTypes=[
 ];
 const poiLayer=document.getElementById('poiLayer'),poiFilters=document.getElementById('poiFilters');
 const poiCategory=document.getElementById('poiCategory'),poiStatus=document.getElementById('poiStatus');
-let pois=[],visiblePoi=new Set(poiTypes.map(t=>t[0])),placingPoi=false;
+let pois=[],visiblePoi=new Set(),placingPoi=false;
 try{const data=JSON.parse(localStorage.getItem('pm_poi_v1')||'[]');
  if(Array.isArray(data))pois=data.filter(p=>p&&Number.isFinite(p.px)&&Number.isFinite(p.py)&&poiTypes.some(t=>t[0]===p.type)).slice(0,500);
 }catch(e){}
 const savePois=()=>{try{localStorage.setItem('pm_poi_v1',JSON.stringify(pois))}catch(e){poiStatus.textContent='Não foi possível salvar no navegador.'}};
 poiTypes.forEach(([id,icon,name])=>{
  const row=document.createElement('label');row.className='poi-row';
- const cb=document.createElement('input');cb.type='checkbox';cb.checked=true;cb.onchange=()=>{
+ const cb=document.createElement('input');cb.type='checkbox';cb.checked=false;cb.onchange=()=>{
  if(cb.checked)visiblePoi.add(id);else visiblePoi.delete(id);renderPois();};
  const title=document.createElement('span');title.textContent=icon+' '+name;
  const count=document.createElement('em');count.id='count-'+id;
@@ -113,7 +113,7 @@ function addPoi(px,py,x=null,y=null){
  const type=poiCategory.value,t=poiTypes.find(t=>t[0]===type);
  if(!t||px<0||px>S||py<0||py>S){poiStatus.textContent='Ponto fora do mapa.';return;}
  const name=document.getElementById('poiName').value.trim()||t[2]+' '+(pois.length+1);
- pois.push({type,name,px,py,x,y});savePois();renderPois();poiStatus.textContent='✓ '+name+' adicionado.';
+ pois.push({type,name,px,py,x,y});visiblePoi.add(type);poiFilters.querySelectorAll('input').forEach((cb,i)=>{cb.checked=visiblePoi.has(poiTypes[i][0])});savePois();renderPois();poiStatus.textContent='✓ '+name+' adicionado.';
 }
 document.getElementById('poiAddCoords').onclick=()=>{
  const c=parseCoords();if(!c){poiStatus.textContent='Cole coordenadas válidas no campo acima.';return;}
@@ -129,5 +129,5 @@ renderPois();
 
 v.addEventListener('click',e=>{if(placingPoi&&!e.target.closest('button')){const rect=v.getBoundingClientRect();const px=(e.clientX-rect.left-ox)/zoom,py=(e.clientY-rect.top-oy)/zoom;addPoi(px,py);placingPoi=false;document.getElementById('poiAddClick').classList.remove('poi-active');return;}if(waiting<0||e.target.closest('button'))return;const rect=v.getBoundingClientRect();let px=(e.clientX-rect.left-ox)/zoom,py=(e.clientY-rect.top-oy)/zoom;if(px<0||px>S||py<0||py>S){calMessage('Clique dentro da imagem do mapa.');return;}refs[waiting]={...refs[waiting],px,py};calMessage('Referência '+(waiting+1)+' registrada.');waiting=-1;const next=calculateCalibration(refs);if(next){calibration=next;localStorage.setItem('pm_map_calibration_v2',JSON.stringify(refs));document.getElementById('warning').textContent='✓ Conversão calibrada neste navegador com duas referências. Confira com uma terceira posição antes de confiar no resultado.';calMessage('Calibração salva. Teste uma terceira coordenada independente.');}else if(refs.every(Boolean)){calMessage('Referências insuficientemente separadas. Escolha dois locais distantes em ambos os eixos.')}});
 if(calibration){document.getElementById('warning').textContent='✓ Conversão carregada. Calibração manual substitui as referências padrão.'}
-document.getElementById('submit').onclick=locate;document.getElementById('coords').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();locate();}});document.getElementById('plus').onclick=()=>changeZoom(1.5);document.getElementById('minus').onclick=()=>changeZoom(1/1.5);document.getElementById('home').onclick=fit;document.getElementById('loc').onclick=center;v.addEventListener('wheel',e=>{e.preventDefault();const r=v.getBoundingClientRect();changeZoom(e.deltaY<0?1.14:1/1.14,e.clientX-r.left,e.clientY-r.top);},{passive:false});let pointers=new Map(),lastDist=0;v.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;v.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);v.classList.add('dragging');});v.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){ox+=e.clientX-prev[0];oy+=e.clientY-prev[1];draw();}else if(pointers.size===2){const a=[...pointers.values()],dist=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(lastDist){const r=v.getBoundingClientRect();changeZoom(dist/lastDist,(a[0][0]+a[1][0])/2-r.left,(a[0][1]+a[1][1])/2-r.top);}lastDist=dist;}});function end(e){pointers.delete(e.pointerId);lastDist=0;if(!pointers.size)v.classList.remove('dragging');}v.addEventListener('pointerup',end);v.addEventListener('pointercancel',end);window.addEventListener('resize',()=>{if(point)center();else fit();});fit();
+document.getElementById('submit').onclick=locate;document.getElementById('coords').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();locate();}});document.getElementById('plus').onclick=()=>changeZoom(1.5);document.getElementById('minus').onclick=()=>changeZoom(1/1.5);document.getElementById('home').onclick=fit;document.getElementById('loc').onclick=center;v.addEventListener('wheel',e=>{e.preventDefault();const r=v.getBoundingClientRect();changeZoom(e.deltaY<0?1.14:1/1.14,e.clientX-r.left,e.clientY-r.top);},{passive:false});let pointers=new Map(),lastDist=0;v.addEventListener('pointerdown',e=>{if(placingPoi||e.target.closest('button'))return;v.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);v.classList.add('dragging');});v.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){ox+=e.clientX-prev[0];oy+=e.clientY-prev[1];draw();}else if(pointers.size===2){const a=[...pointers.values()],dist=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(lastDist){const r=v.getBoundingClientRect();changeZoom(dist/lastDist,(a[0][0]+a[1][0])/2-r.left,(a[0][1]+a[1][1])/2-r.top);}lastDist=dist;}});function end(e){pointers.delete(e.pointerId);lastDist=0;if(!pointers.size)v.classList.remove('dragging');}v.addEventListener('pointerup',end);v.addEventListener('pointercancel',end);window.addEventListener('resize',()=>{if(point)center();else fit();});fit();
 </script></body></html>
