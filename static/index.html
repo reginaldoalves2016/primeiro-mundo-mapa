@@ -7,14 +7,29 @@
 .tools{margin-top:12px;border-top:1px solid #435065;padding-top:12px}.tools summary{cursor:pointer;font-weight:700}
 .tools p{font-size:12px;color:#b8c7db;line-height:1.45}.tools button{font-size:12px;margin:3px}
 #warning{font-size:12px;color:#ffd58c;line-height:1.5;margin:10px 0}
+.poi-panel{margin-top:18px;padding:14px;border:1px solid #40516c;border-radius:12px;background:#121c2a}.poi-panel h3{margin:0 0 8px}.poi-row{display:flex;align-items:center;gap:8px;margin:9px 0;font-size:13px}.poi-row input{accent-color:#677bff}.poi-row span{flex:1}.poi-row em{font-style:normal;color:#a9bbd0}.poi-panel select,.poi-panel input[type=text]{background:#0c1522;color:white;border:1px solid #5b6980;border-radius:8px;padding:9px;width:100%;margin:5px 0}.poi-panel button{margin:5px 3px 3px 0}.poi-marker{position:absolute;transform:translate(-50%,-100%);font-size:23px;cursor:pointer;filter:drop-shadow(0 2px 3px #000);z-index:3;user-select:none}.poi-marker.hidden{display:none}.poi-marker.selected{filter:drop-shadow(0 0 6px white)}.poi-note{font-size:12px;color:#b5c8e1;line-height:1.45}.poi-active{outline:2px solid #ffce5b!important}#poiList{max-height:170px;overflow:auto;font-size:12px}#poiList button{display:block;text-align:left;background:#28394f;width:100%;margin:4px 0} 
 </style></head><body><header><strong>🗺️ PRIMEIRO MUNDO</strong><small>MAPA INTERATIVO • SCUM</small></header><main><aside><label for="coords">Cole coordenadas do SCUM ou do registro de veículos</label><textarea id="coords" spellcheck="false" placeholder="SCUM: {X=-288799.375 Y=-1091.543 Z=35881.891|P=331.256775 Y=200.162445 R=358.912628}&#10;Veículos: X=-353285.6 Y=-440519.8 Z=7886.5"></textarea><button id="submit">📍 Localizar no mapa</button><div id="status" role="status" aria-live="polite">Insira suas coordenadas para visualizar o marcador.</div><div id="details"></div><div id="warning">ℹ️ Mapa pré-calibrado com três referências informadas. A precisão é aproximada; confirme no jogo.</div>
 <label style="font-weight:normal"><input type="checkbox" id="showGrid" checked> Exibir setores D–Z / 4–0</label>
-<details class="tools"><summary>🛠️ Calibrar posição do marcador</summary>
+<section class="poi-panel" aria-label="Pontos de interesse">
+<h3>📍 Pontos de interesse</h3>
+<p class="poi-note">Selecione o que deseja visualizar. Os pontos que você cadastrar ficam salvos neste navegador.</p>
+<div id="poiFilters"></div>
+<button type="button" id="poiAll" class="secondary">Mostrar todos</button><button type="button" id="poiNone" class="secondary">Ocultar todos</button>
+<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:bold">➕ Cadastrar um local</summary>
+<p class="poi-note">Escolha a categoria e cole as coordenadas acima; depois clique em adicionar. Também é possível marcar clicando no mapa.</p>
+<select id="poiCategory" aria-label="Categoria do ponto"></select>
+<input type="text" id="poiName" placeholder="Nome do local (opcional)" maxlength="80">
+<button type="button" id="poiAddCoords">Adicionar pelas coordenadas</button>
+<button type="button" id="poiAddClick" class="secondary">Marcar clicando no mapa</button>
+<p class="poi-note" id="poiStatus" role="status"></p>
+</details>
+<details style="margin-top:10px"><summary style="cursor:pointer">Gerenciar meus marcadores</summary><div id="poiList"></div></details>
+</section><details class="tools"><summary>🛠️ Calibrar posição do marcador</summary>
 <p>1. Vá a um local conhecido no jogo e copie suas coordenadas. Cole no campo acima. Clique em <b>Registrar referência 1</b> e depois clique na posição correta no mapa.</p>
 <p>2. Repita em outro ponto distante, com X e Y diferentes, usando <b>Registrar referência 2</b>. A conversão será ajustada automaticamente neste navegador.</p>
 <button type="button" id="ref1">Registrar referência 1</button><button type="button" id="ref2">Registrar referência 2</button><button type="button" class="secondary" id="clearCal">Limpar calibração</button>
 <p id="calStatus"></p><p>Os nomes seguem a orientação do mapa de referência do SCUM. As linhas precisam de validação cartográfica antes de uso como limites oficiais.</p>
-</details><p class="hint">Use a roda do mouse ou os botões +/− para ampliar. Arraste o mapa para explorar. No celular, use dois dedos para dar zoom.</p><p class="hint">A consulta é feita no seu dispositivo; as coordenadas não são enviadas ao servidor.</p></aside><section class="map-area" id="viewport" aria-label="Mapa interativo da ilha SCUM"><div class="world" id="world"><img src="/static/mapa.png" alt="Mapa da ilha SCUM" draggable="false"><div class="grid" id="grid"></div><div class="pin" id="pin"><i></i></div></div><div class="controls"><button id="plus" aria-label="Ampliar">+</button><button id="minus" aria-label="Reduzir">−</button><button id="home" class="secondary" aria-label="Ver mapa completo">⌂</button><button id="loc" class="secondary" aria-label="Centralizar marcador">◎</button></div><div class="legend">🔴 Sua localização • Base NerdMaps</div></section></main><script type="module">
+</details><p class="hint">Use a roda do mouse ou os botões +/− para ampliar. Arraste o mapa para explorar. No celular, use dois dedos para dar zoom.</p><p class="hint">A consulta é feita no seu dispositivo; as coordenadas não são enviadas ao servidor.</p></aside><section class="map-area" id="viewport" aria-label="Mapa interativo da ilha SCUM"><div class="world" id="world"><img src="/static/mapa.png" alt="Mapa da ilha SCUM" draggable="false"><div class="grid" id="grid"></div><div id="poiLayer"></div><div class="pin" id="pin"><i></i></div></div><div class="controls"><button id="plus" aria-label="Ampliar">+</button><button id="minus" aria-label="Reduzir">−</button><button id="home" class="secondary" aria-label="Ver mapa completo">⌂</button><button id="loc" class="secondary" aria-label="Centralizar marcador">◎</button></div><div class="legend">🔴 Sua localização • Base NerdMaps</div></section></main><script type="module">
 // SDK opcional: a página também funciona no navegador enquanto a Activity é configurada.
 if(new URLSearchParams(location.search).has('frame_id')){import('https://esm.sh/@discord/embedded-app-sdk@2').then(async m=>{const id=new URLSearchParams(location.search).get('client_id');if(id){const sdk=new m.DiscordSDK(id);await sdk.ready();}}).catch(e=>console.warn('Discord SDK:',e));}
 </script><script>
@@ -50,7 +65,69 @@ const v=document.getElementById('viewport'),w=document.getElementById('world'),p
 const pattern=/^\s*\{?\s*X\s*=\s*([+-]?\d+(?:\.\d+)?)\s+Y\s*=\s*([+-]?\d+(?:\.\d+)?)\s+Z\s*=\s*([+-]?\d+(?:\.\d+)?)\s*(?:\|\s*P\s*=\s*[+-]?\d+(?:\.\d+)?\s+Y\s*=\s*[+-]?\d+(?:\.\d+)?\s+R\s*=\s*[+-]?\d+(?:\.\d+)?)?\s*\}?\s*$/i;
 function locate(){const m=document.getElementById('coords').value.match(pattern);if(!m){st.textContent='❌ Formato inválido. Use coordenadas do SCUM ou do registro de veículos: X=... Y=... Z=...';return;}const [x,y,z]=m.slice(1).map(Number);if(!calibration&&(x<minX||x>maxX||y<minY||y>maxY)){st.textContent='⚠️ Coordenada fora dos limites da base cartográfica.';return;} // NerdMaps uses game Y on the horizontal axis, game X on vertical.
 const {px,py}=convert(x,y);if(px<0||px>S||py<0||py>S){st.textContent="⚠️ Ponto fora da imagem. Confira a calibração.";return;}point={px,py};pin.style.left=px+'px';pin.style.top=py+'px';pin.style.display='block';st.textContent=calibration?'📍 Posição calculada com suas duas referências.':'📍 Posição calculada com as referências do servidor.';details.textContent=`X: ${x.toFixed(3)}\nY: ${y.toFixed(3)}\nZ: ${z.toFixed(3)}`;zoom=Math.max(zoom,Math.min(v.clientWidth/S,v.clientHeight/S)*2.8);center();}
-v.addEventListener('click',e=>{if(waiting<0||e.target.closest('button'))return;const rect=v.getBoundingClientRect();let px=(e.clientX-rect.left-ox)/zoom,py=(e.clientY-rect.top-oy)/zoom;if(px<0||px>S||py<0||py>S){calMessage('Clique dentro da imagem do mapa.');return;}refs[waiting]={...refs[waiting],px,py};calMessage('Referência '+(waiting+1)+' registrada.');waiting=-1;const next=calculateCalibration(refs);if(next){calibration=next;localStorage.setItem('pm_map_calibration_v2',JSON.stringify(refs));document.getElementById('warning').textContent='✓ Conversão calibrada neste navegador com duas referências. Confira com uma terceira posição antes de confiar no resultado.';calMessage('Calibração salva. Teste uma terceira coordenada independente.');}else if(refs.every(Boolean)){calMessage('Referências insuficientemente separadas. Escolha dois locais distantes em ambos os eixos.')}});
+
+// Marcadores cadastrados pelo usuário: nenhum local é inventado.
+const poiTypes=[
+ ['fuel','⛽','Postos de combustível'],['secret','🔐','Bunkers secretos'],
+ ['abandoned','☢️','Bunkers abandonados'],['normal','🏢','Bunkers normais'],
+ ['pharmacy','🏥','Farmácias']
+];
+const poiLayer=document.getElementById('poiLayer'),poiFilters=document.getElementById('poiFilters');
+const poiCategory=document.getElementById('poiCategory'),poiStatus=document.getElementById('poiStatus');
+let pois=[],visiblePoi=new Set(poiTypes.map(t=>t[0])),placingPoi=false;
+try{const data=JSON.parse(localStorage.getItem('pm_poi_v1')||'[]');
+ if(Array.isArray(data))pois=data.filter(p=>p&&Number.isFinite(p.px)&&Number.isFinite(p.py)&&poiTypes.some(t=>t[0]===p.type)).slice(0,500);
+}catch(e){}
+const savePois=()=>{try{localStorage.setItem('pm_poi_v1',JSON.stringify(pois))}catch(e){poiStatus.textContent='Não foi possível salvar no navegador.'}};
+poiTypes.forEach(([id,icon,name])=>{
+ const row=document.createElement('label');row.className='poi-row';
+ const cb=document.createElement('input');cb.type='checkbox';cb.checked=true;cb.onchange=()=>{
+ if(cb.checked)visiblePoi.add(id);else visiblePoi.delete(id);renderPois();};
+ const title=document.createElement('span');title.textContent=icon+' '+name;
+ const count=document.createElement('em');count.id='count-'+id;
+ row.append(cb,title,count);poiFilters.append(row);
+ const option=document.createElement('option');option.value=id;option.textContent=icon+' '+name;poiCategory.append(option);
+});
+function renderPois(){
+ poiLayer.replaceChildren();
+ for(const [id] of poiTypes)document.getElementById('count-'+id).textContent=pois.filter(p=>p.type===id).length;
+ pois.forEach((p,i)=>{
+  if(!visiblePoi.has(p.type))return;
+  const t=poiTypes.find(t=>t[0]===p.type);
+  const el=document.createElement('button');el.type='button';el.className='poi-marker';
+  el.style.cssText=`left:${p.px}px;top:${p.py}px;background:none;border:0;padding:0`;
+  el.textContent=t[1];el.title=p.name+' • '+t[2];
+  el.onclick=(e)=>{e.stopPropagation();poiStatus.textContent=p.name+' • '+t[2]+(p.x!=null?' • X='+p.x+' Y='+p.y:'');point={px:p.px,py:p.py};center();};
+  poiLayer.append(el);
+ });
+ const list=document.getElementById('poiList');list.replaceChildren();
+ pois.forEach((p,i)=>{
+  const t=poiTypes.find(t=>t[0]===p.type);
+  const b=document.createElement('button');b.type='button';b.textContent=t[1]+' '+p.name+'  ✕';
+  b.title='Excluir marcador';b.onclick=()=>{if(confirm('Excluir '+p.name+'?')){pois.splice(i,1);savePois();renderPois()}};
+  list.append(b);
+ });
+ if(!pois.length)list.textContent='Nenhum ponto cadastrado.';
+}
+function addPoi(px,py,x=null,y=null){
+ const type=poiCategory.value,t=poiTypes.find(t=>t[0]===type);
+ if(!t||px<0||px>S||py<0||py>S){poiStatus.textContent='Ponto fora do mapa.';return;}
+ const name=document.getElementById('poiName').value.trim()||t[2]+' '+(pois.length+1);
+ pois.push({type,name,px,py,x,y});savePois();renderPois();poiStatus.textContent='✓ '+name+' adicionado.';
+}
+document.getElementById('poiAddCoords').onclick=()=>{
+ const c=parseCoords();if(!c){poiStatus.textContent='Cole coordenadas válidas no campo acima.';return;}
+ const p=convert(c[0],c[1]);addPoi(p.px,p.py,c[0],c[1]);
+};
+document.getElementById('poiAddClick').onclick=()=>{
+ placingPoi=!placingPoi;poiStatus.textContent=placingPoi?'Clique na posição desejada no mapa.':'Marcação cancelada.';
+ document.getElementById('poiAddClick').classList.toggle('poi-active',placingPoi);
+};
+document.getElementById('poiAll').onclick=()=>{visiblePoi=new Set(poiTypes.map(t=>t[0]));poiFilters.querySelectorAll('input').forEach(c=>c.checked=true);renderPois()};
+document.getElementById('poiNone').onclick=()=>{visiblePoi.clear();poiFilters.querySelectorAll('input').forEach(c=>c.checked=false);renderPois()};
+renderPois();
+
+v.addEventListener('click',e=>{if(placingPoi&&!e.target.closest('button')){const rect=v.getBoundingClientRect();const px=(e.clientX-rect.left-ox)/zoom,py=(e.clientY-rect.top-oy)/zoom;addPoi(px,py);placingPoi=false;document.getElementById('poiAddClick').classList.remove('poi-active');return;}if(waiting<0||e.target.closest('button'))return;const rect=v.getBoundingClientRect();let px=(e.clientX-rect.left-ox)/zoom,py=(e.clientY-rect.top-oy)/zoom;if(px<0||px>S||py<0||py>S){calMessage('Clique dentro da imagem do mapa.');return;}refs[waiting]={...refs[waiting],px,py};calMessage('Referência '+(waiting+1)+' registrada.');waiting=-1;const next=calculateCalibration(refs);if(next){calibration=next;localStorage.setItem('pm_map_calibration_v2',JSON.stringify(refs));document.getElementById('warning').textContent='✓ Conversão calibrada neste navegador com duas referências. Confira com uma terceira posição antes de confiar no resultado.';calMessage('Calibração salva. Teste uma terceira coordenada independente.');}else if(refs.every(Boolean)){calMessage('Referências insuficientemente separadas. Escolha dois locais distantes em ambos os eixos.')}});
 if(calibration){document.getElementById('warning').textContent='✓ Conversão carregada. Calibração manual substitui as referências padrão.'}
 document.getElementById('submit').onclick=locate;document.getElementById('coords').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();locate();}});document.getElementById('plus').onclick=()=>changeZoom(1.5);document.getElementById('minus').onclick=()=>changeZoom(1/1.5);document.getElementById('home').onclick=fit;document.getElementById('loc').onclick=center;v.addEventListener('wheel',e=>{e.preventDefault();const r=v.getBoundingClientRect();changeZoom(e.deltaY<0?1.14:1/1.14,e.clientX-r.left,e.clientY-r.top);},{passive:false});let pointers=new Map(),lastDist=0;v.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;v.setPointerCapture(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);v.classList.add('dragging');});v.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const prev=pointers.get(e.pointerId);pointers.set(e.pointerId,[e.clientX,e.clientY]);if(pointers.size===1){ox+=e.clientX-prev[0];oy+=e.clientY-prev[1];draw();}else if(pointers.size===2){const a=[...pointers.values()],dist=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(lastDist){const r=v.getBoundingClientRect();changeZoom(dist/lastDist,(a[0][0]+a[1][0])/2-r.left,(a[0][1]+a[1][1])/2-r.top);}lastDist=dist;}});function end(e){pointers.delete(e.pointerId);lastDist=0;if(!pointers.size)v.classList.remove('dragging');}v.addEventListener('pointerup',end);v.addEventListener('pointercancel',end);window.addEventListener('resize',()=>{if(point)center();else fit();});fit();
 </script></body></html>
