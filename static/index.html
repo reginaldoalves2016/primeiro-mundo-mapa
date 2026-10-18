@@ -66,7 +66,8 @@ const v=document.getElementById('viewport'),w=document.getElementById('world'),p
 // Aceita mensagens do Discord e formatos X: / X=; usa somente o primeiro trio XYZ.
 // O segundo Y depois de |P= é orientação e nunca substitui a posição.
 const numberPart=String.raw`([+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+))`;
-const pattern=new RegExp('\\bX\\s*[:=]\\s*'+numberPart+'\\s*[,;]?\\s+Y\\s*[:=]\\s*'+numberPart+'\\s*[,;]?\\s+Z\\s*[:=]\\s*'+numberPart,'i');
+const axisSep=String.raw`\s*(?:[:=]\s*|(?=\s*[-+\d.]))`;
+const pattern=new RegExp('\\bX'+axisSep+numberPart+'\\s*[,;]?\\s+Y'+axisSep+numberPart+'\\s*[,;]?\\s+Z'+axisSep+numberPart,'i');
 function readCoordinates(text){const m=text.match(pattern);return m?m.slice(1,4).map(n=>Number(n.replace(',','.'))):null;}
 
 function locate(){const coords=readCoordinates(document.getElementById('coords').value);if(!coords){st.textContent='❌ Formato inválido. Use coordenadas do SCUM ou do registro de veículos: X=... Y=... Z=...';return;}const [x,y,z]=coords;if(!calibration&&(x<minX||x>maxX||y<minY||y>maxY)){st.textContent='⚠️ Coordenada fora dos limites da base cartográfica.';return;} // NerdMaps uses game Y on the horizontal axis, game X on vertical.
