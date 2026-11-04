@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PRIMEIRO MUNDO | Mapa SCUM</title><style>
-:root{font-family:Inter,system-ui,Arial,sans-serif;color:#f5f7fb;background:#10141b}*{box-sizing:border-box}body{margin:0}header{padding:13px 18px;background:#181f2a;border-bottom:1px solid #344053;display:flex;align-items:center;gap:12px;flex-wrap:wrap}header strong{letter-spacing:.05em}header small{color:#aab6c7}main{height:calc(100dvh - 63px);min-height:480px;display:grid;grid-template-columns:minmax(280px,350px) minmax(0,1fr)}aside{background:#19222f;border-right:1px solid #344053;padding:22px;overflow:auto}label{display:block;font-size:14px;font-weight:700;margin-bottom:12px}textarea{resize:vertical;width:100%;min-height:116px;background:#0d1520;color:white;border:1px solid #5b6980;border-radius:10px;padding:12px;font:13px/1.6 monospace}button{background:#5364ee;border:0;border-radius:9px;padding:11px 15px;color:white;font-weight:700;cursor:pointer}button:focus-visible,textarea:focus-visible{outline:2px solid #a4b3ff}button.secondary{background:#35445c}#submit{width:100%;margin-top:10px}#status{font-size:14px;line-height:1.5;color:#bdc8d7;min-height:62px;margin-top:14px}#details{font-family:monospace;white-space:pre-line;color:#d6e1f2;font-size:13px}.hint{font-size:13px;color:#9caec4;line-height:1.6}.map-area{position:relative;min-width:0;background:#0b1018;overflow:hidden;touch-action:none;cursor:grab}.map-area.dragging{cursor:grabbing}.world{position:absolute;width:1080px;height:1080px;transform-origin:0 0;will-change:transform}.world img{width:100%;height:100%;display:block;user-select:none;pointer-events:none}/* Camada de marcadores independente da imagem transformada.
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#f5f7fb;background:#10141b}*{box-sizing:border-box}body{margin:0}header{padding:13px 18px;background:#181f2a;border-bottom:1px solid #344053;display:flex;align-items:center;gap:12px;flex-wrap:wrap}header strong{letter-spacing:.05em}header small{color:#aab6c7}main{height:calc(100dvh - 63px);min-height:480px;display:grid;grid-template-columns:minmax(280px,350px) minmax(0,1fr)}aside{background:#19222f;border-right:1px solid #344053;padding:22px;overflow:auto}label{display:block;font-size:14px;font-weight:700;margin-bottom:12px}textarea{resize:vertical;width:100%;min-height:116px;background:#0d1520;color:white;border:1px solid #5b6980;border-radius:10px;padding:12px;font:13px/1.6 monospace}button{background:#5364ee;border:0;border-radius:9px;padding:11px 15px;color:white;font-weight:700;cursor:pointer}button:focus-visible,textarea:focus-visible{outline:2px solid #a4b3ff}button.secondary{background:#35445c}#submit{width:100%;margin-top:10px}#status{font-size:14px;line-height:1.5;color:#bdc8d7;min-height:62px;margin-top:14px}#details{font-family:monospace;white-space:pre-line;color:#d6e1f2;font-size:13px}.hint{font-size:13px;color:#9caec4;line-height:1.6}.map-area{position:relative;min-width:0;background:#0b1018;overflow:hidden;touch-action:none;cursor:grab}.map-area.dragging{cursor:grabbing}.map-area,.map-area *{user-select:none!important;-webkit-user-select:none!important;-webkit-user-drag:none!important;touch-action:none}.world{position:absolute;width:1080px;height:1080px;transform-origin:0 0;will-change:transform}.world img{width:100%;height:100%;display:block;user-select:none;pointer-events:none}/* Camada de marcadores independente da imagem transformada.
    Cada centro e projetado a partir da MESMA matriz de zoom/pan do mapa. */
 .marker-overlay{position:absolute;inset:0;pointer-events:none;z-index:2;overflow:hidden}
 .marker-overlay .poi-marker{pointer-events:auto}
@@ -225,49 +225,56 @@ renderPois();
 
 v.addEventListener('click',e=>{if(placingPoi&&!e.target.closest('button')){const rect=v.getBoundingClientRect();const px=(e.clientX-rect.left-ox)/zoom,py=(e.clientY-rect.top-oy)/zoom;addPoi(px,py);placingPoi=false;document.getElementById('poiAddClick').classList.remove('poi-active');return;}if(waiting<0||e.target.closest('button'))return;const rect=v.getBoundingClientRect();let px=(e.clientX-rect.left-ox)/zoom,py=(e.clientY-rect.top-oy)/zoom;if(px<0||px>S||py<0||py>S){calMessage('Clique dentro da imagem do mapa.');return;}refs[waiting]={...refs[waiting],px,py};calMessage('Referência '+(waiting+1)+' registrada.');waiting=-1;const next=calculateCalibration(refs);if(next){calibration=next;manualCalibrationActive=true;localStorage.setItem(CALIBRATION_KEY,JSON.stringify(refs));document.getElementById('warning').textContent='✓ Conversão calibrada neste navegador com duas referências. Confira com uma terceira posição antes de confiar no resultado.';calMessage('Calibração salva. Teste uma terceira coordenada independente.');const c=parseCoords();if(c&&point&&pin.style.display==='block'){point=convert(c[0],c[1]);center();}refreshCoordinatePois();renderPois();}else if(refs.every(Boolean)){calMessage('Referências insuficientemente separadas. Escolha dois locais distantes em ambos os eixos.')}});
 if(manualCalibrationActive){document.getElementById('warning').textContent='✓ Calibração manual atual carregada deste navegador.'}else{document.getElementById('warning').textContent='✓ Conversão idêntica à do mapa do Discord. A mira acompanha a imagem durante o zoom.'}
-document.getElementById('submit').onclick=locate;document.getElementById('coords').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();locate();}});document.getElementById('plus').onclick=()=>changeZoom(1.5);document.getElementById('minus').onclick=()=>changeZoom(1/1.5);document.getElementById('home').onclick=fit;document.getElementById('loc').onclick=center;v.addEventListener('wheel',e=>{e.preventDefault();const r=v.getBoundingClientRect();changeZoom(e.deltaY<0?1.14:1/1.14,e.clientX-r.left,e.clientY-r.top);},{passive:false});// V9: permitir arrastar com o botao esquerdo mesmo quando o movimento
-// comeca sobre um marcador clicavel. Somente os botoes de controle bloqueiam pan.
-// A captura fica no proprio marcador para preservar o clique simples de consulta.
-let pointers=new Map(),pointerStarts=new Map(),lastDist=0,ignoreNextMapClick=false;
+document.getElementById('submit').onclick=locate;document.getElementById('coords').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();locate();}});document.getElementById('plus').onclick=()=>changeZoom(1.5);document.getElementById('minus').onclick=()=>changeZoom(1/1.5);document.getElementById('home').onclick=fit;document.getElementById('loc').onclick=center;v.addEventListener('wheel',e=>{e.preventDefault();const r=v.getBoundingClientRect();changeZoom(e.deltaY<0?1.14:1/1.14,e.clientX-r.left,e.clientY-r.top);},{passive:false});// V10: pan com botao esquerdo sobre toda a superficie, inclusive marcadores.
+// Captura no viewport evita arrasto nativo da imagem e perda de eventos.
+let pointers=new Map(), pointerStarts=new Map(), lastDist=0;
+let suppressMapClick=false, pressMarker=null, pressWasDrag=false;
+v.addEventListener('dragstart',e=>e.preventDefault());
+v.addEventListener('selectstart',e=>e.preventDefault());
 v.addEventListener('pointerdown',e=>{
-  if(!pointers.size)ignoreNextMapClick=false;
-  const marker=e.target.closest('.poi-marker');
-  if(placingPoi||(e.target.closest('button')&&!marker))return;
-  const captureTarget=marker||v;
-  captureTarget.setPointerCapture(e.pointerId);
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  if(e.target.closest('.controls'))return;
+  // Nao desabilitar pan quando usuario estiver cadastrando um POI.
+  e.preventDefault();
+  if(!pointers.size){suppressMapClick=false;pressWasDrag=false;pressMarker=e.target.closest('.poi-marker');}
+  try{v.setPointerCapture(e.pointerId);}catch(_){}
   pointers.set(e.pointerId,[e.clientX,e.clientY]);
   pointerStarts.set(e.pointerId,[e.clientX,e.clientY]);
-  if(pointers.size>1)ignoreNextMapClick=true;
+  if(pointers.size>1)pressWasDrag=true;
   v.classList.add('dragging');
 });
 v.addEventListener('pointermove',e=>{
   if(!pointers.has(e.pointerId))return;
   const prev=pointers.get(e.pointerId),start=pointerStarts.get(e.pointerId);
   pointers.set(e.pointerId,[e.clientX,e.clientY]);
-  if(start&&Math.hypot(e.clientX-start[0],e.clientY-start[1])>5)ignoreNextMapClick=true;
+  if(start&&Math.hypot(e.clientX-start[0],e.clientY-start[1])>4){pressWasDrag=true;suppressMapClick=true;}
   if(pointers.size===1){
     ox+=e.clientX-prev[0];oy+=e.clientY-prev[1];draw();
   }else if(pointers.size===2){
     const a=[...pointers.values()],dist=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);
-    if(lastDist){
-      const r=v.getBoundingClientRect();
-      changeZoom(dist/lastDist,(a[0][0]+a[1][0])/2-r.left,(a[0][1]+a[1][1])/2-r.top);
-    }
+    if(lastDist){const r=v.getBoundingClientRect();changeZoom(dist/lastDist,(a[0][0]+a[1][0])/2-r.left,(a[0][1]+a[1][1])/2-r.top);}
     lastDist=dist;
   }
 });
-function end(e){
+function endPointer(e){
+  if(!pointers.has(e.pointerId))return;
   pointers.delete(e.pointerId);pointerStarts.delete(e.pointerId);lastDist=0;
-  if(!pointers.size)v.classList.remove('dragging');
-}
-v.addEventListener('pointerup',end);
-v.addEventListener('pointercancel',end);
-// Nao acionar um ponto de interesse nem registrar uma coordenada ao soltar
-// o mouse depois de arrastar. Um clique parado continua funcionando.
-v.addEventListener('click',e=>{
-  if(ignoreNextMapClick){
-    e.preventDefault();e.stopImmediatePropagation();ignoreNextMapClick=false;
+  if(!pointers.size){
+    v.classList.remove('dragging');
+    // Captura do viewport redireciona o click: reencaminhar apenas clique
+    // simples em marcador, nunca um arrasto.
+    if(!pressWasDrag&&pressMarker&&pressMarker.isConnected&&e.type==='pointerup'){
+      suppressMapClick=true;
+      pressMarker.click();
+    }
+    pressMarker=null;
   }
+}
+v.addEventListener('pointerup',endPointer);
+v.addEventListener('pointercancel',endPointer);
+v.addEventListener('lostpointercapture',endPointer);
+v.addEventListener('click',e=>{
+  if(suppressMapClick){e.preventDefault();e.stopImmediatePropagation();suppressMapClick=false;}
 },true);
 window.addEventListener('resize',()=>{if(point)center();else fit();});fit();
 </script></body></html>
