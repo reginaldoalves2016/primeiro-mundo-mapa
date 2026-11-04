@@ -36,10 +36,30 @@
 <p>2. Repita em outro ponto distante, com X e Y diferentes, usando <b>Registrar referência 2</b>. A conversão será ajustada automaticamente neste navegador.</p>
 <button type="button" id="ref1">Registrar referência 1</button><button type="button" id="ref2">Registrar referência 2</button><button type="button" class="secondary" id="clearCal">Limpar calibração</button>
 <p id="calStatus"></p><p>Os nomes seguem a orientação do mapa de referência do SCUM. As linhas precisam de validação cartográfica antes de uso como limites oficiais.</p>
-</details><p class="hint">Use a roda do mouse ou os botões +/− para ampliar. Arraste o mapa para explorar. No celular, use dois dedos para dar zoom.</p><p class="hint">A consulta é feita no seu dispositivo; as coordenadas não são enviadas ao servidor.</p></aside><section class="map-area" id="viewport" aria-label="Mapa interativo da ilha SCUM"><div class="world" id="world"><img src="/static/mapa.png" alt="Mapa da ilha SCUM" draggable="false"><div class="grid" id="grid"></div><div id="poiLayer"></div><div class="pin target-marker" id="pin" aria-hidden="true"></div></div><div class="controls"><button id="plus" aria-label="Ampliar">+</button><button id="minus" aria-label="Reduzir">−</button><button id="home" class="secondary" aria-label="Ver mapa completo">⌂</button><button id="loc" class="secondary" aria-label="Centralizar marcador">◎</button></div><div class="legend">🔴 Sua localização • Base NerdMaps</div></section></main><script type="module">
+</details><p class="hint">Use a roda do mouse ou os botões +/− para ampliar. Arraste o mapa para explorar. No celular, use dois dedos para dar zoom.</p><p class="hint">A consulta é feita no seu dispositivo; as coordenadas não são enviadas ao servidor.</p></aside><section class="map-area" id="viewport" aria-label="Mapa interativo da ilha SCUM"><div class="world" id="world"><img id="mapBackground" src="static/mapa.png" alt="Mapa da ilha SCUM" draggable="false"><div class="grid" id="grid"></div><div id="poiLayer"></div><div class="pin target-marker" id="pin" aria-hidden="true"></div></div><div class="controls"><button id="plus" aria-label="Ampliar">+</button><button id="minus" aria-label="Reduzir">−</button><button id="home" class="secondary" aria-label="Ver mapa completo">⌂</button><button id="loc" class="secondary" aria-label="Centralizar marcador">◎</button></div><div class="legend">🔴 Sua localização • Base NerdMaps</div></section></main><script type="module">
 // SDK opcional: a página também funciona no navegador enquanto a Activity é configurada.
 if(new URLSearchParams(location.search).has('frame_id')){import('https://esm.sh/@discord/embedded-app-sdk@2').then(async m=>{const id=new URLSearchParams(location.search).get('client_id');if(id){const sdk=new m.DiscordSDK(id);await sdk.ready();}}).catch(e=>console.warn('Discord SDK:',e));}
-</script><script src="/static/poi-official.js"></script><script>
+</script><script>
+// Funciona em Flask (/), GitHub Pages (/repositorio/) e acesso direto a /static/index.html.
+const pmStaticPage=/\/static\/index\.html$/i.test(location.pathname);
+const pmAssetBase=pmStaticPage?'./':'./static/';
+document.write('<script src="'+pmAssetBase+'poi-official.js"><\/script>');
+</script><script>
+// Evita mapa preto quando o site é publicado dentro de uma subpasta.
+(function(){
+ const img=document.getElementById('mapBackground');
+ const urls=pmStaticPage?['./mapa.png','../static/mapa.png','/static/mapa.png']:['./static/mapa.png','./mapa.png','/static/mapa.png'];
+ let index=0;
+ img.onerror=function(){
+  index++;
+  if(index<urls.length){img.src=urls[index];return;}
+  const warning=document.getElementById('warning');
+  warning.textContent='❌ A imagem do mapa não foi encontrada. Confira se static/mapa.png foi publicado junto com os demais arquivos.';
+  console.error('Mapa SCUM: imagem não encontrada. Caminhos tentados:',urls);
+ };
+ img.src=urls[0];
+})();
+</script><script>
 const S=1080, minX=-904800,maxX=616818,minY=-904800,maxY=618818;
 const grid=document.getElementById('grid');for(let row=0;row<5;row++)for(let col=0;col<5;col++){let cell=document.createElement('div');cell.className='grid-cell';let label=document.createElement('span');label.textContent='DCBAZ'[row]+(4-col);cell.append(label);grid.append(cell)}
 document.getElementById('showGrid').onchange=e=>grid.style.display=e.target.checked?'grid':'none';
